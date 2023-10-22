@@ -316,7 +316,10 @@ export async function verifyEmail(req: Request, res: Response): Promise<void> {
   }
 }
 
-export async function forgotPasswordUser(req: Request, res: Response): Promise<void> {
+export async function forgotPasswordUser(
+  req: Request,
+  res: Response,
+): Promise<void> {
   const { email } = req.body;
   if (!email) {
     throw new CustomAPIErrorHandler(
@@ -339,7 +342,10 @@ export async function forgotPasswordUser(req: Request, res: Response): Promise<v
       .json({ msg: "Please check your email for verification link" });
   }
 }
-export async function resetPassword(req: Request, res: Response): Promise<void> {
+export async function resetPassword(
+  req: Request,
+  res: Response,
+): Promise<void> {
   const { email, token, password } = req.body;
   if (!email || !token || !password) {
     throw new CustomAPIErrorHandler(
