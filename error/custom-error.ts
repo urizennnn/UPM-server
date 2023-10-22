@@ -1,7 +1,10 @@
 class CustomAPIErrorHandler extends Error {
-    constructor(public StatusCode: number, public message: string){
-        super(message)
-    }
+  constructor(
+    public message: string,
+    public StatusCode: number,
+  ) {
+    super(message);
+  }
 }
 
-export default {CustomAPIErrorHandler}
+export default CustomAPIErrorHandler;

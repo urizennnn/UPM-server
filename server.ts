@@ -1,13 +1,14 @@
 import express, { Request, Response } from "express";
 import * as dotenv from "dotenv";
+import errorhander from "errorhandler";
 import cors from "cors";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
 import helmet from "helmet";
 import mongoSanitize from "express-mongo-sanitize";
 import * as DB from "./db/connect";
-import userRoute from './routes/user'
-import passwordRoute from './routes/password'
+import userRoute from "./routes/user";
+import passwordRoute from "./routes/password";
 dotenv.config();
 const app = express();
 const PORT: number = 8080;
@@ -19,9 +20,10 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(helmet());
 app.use(mongoSanitize());
+app.use(errorhander());
 
-app.use('/api/v1/user',userRoute)
-app.use('/api/v1/user',passwordRoute)
+app.use("/api/v1/user", userRoute);
+app.use("/api/v1/pass", passwordRoute);
 
 app.use("/", (req: Request, res: Response) => {
   res.status(200).json("Hello");
