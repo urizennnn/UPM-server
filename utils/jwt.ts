@@ -34,8 +34,4 @@ function cookies<Type>(res: Response, user: Type, refreshToken: Type): void {
     signed: true,
   });
 }
-export  {
-  createJWT,
-  verifyJWT,
-  cookies,
-};
+export { createJWT, verifyJWT, cookies };
