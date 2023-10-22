@@ -9,10 +9,10 @@ interface User extends Document {
   password: string;
   isVerified: boolean;
   verificationToken: string | undefined;
-  verified: Date | undefined;
-  passwordToken: string | undefined;
-  passTokenExpiration: Date | undefined;
-  Device?: Array<number>;
+  verified: Date | number;
+  passwordToken: string | null;
+  passTokenExpiration: Date | string;
+  Device?: Array<number | undefined>;
 }
 
 const userSchema: Schema = new Schema<User>(

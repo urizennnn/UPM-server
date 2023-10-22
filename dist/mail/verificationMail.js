@@ -7,7 +7,7 @@ const mail_1 = __importDefault(require("@sendgrid/mail"));
 const promises_1 = __importDefault(require("fs/promises"));
 const custom_error_1 = __importDefault(require("../error/custom-error"));
 const http_status_codes_1 = require("http-status-codes");
-async function verificationEmail(email, origin, token) {
+async function verificationEmail(email, token, origin) {
     try {
         const URL = `${origin}/user/verify-email?token=${token}&email=${email}`;
         const html = await promises_1.default.readFile(__dirname + "/../html/verification.html", "utf-8");

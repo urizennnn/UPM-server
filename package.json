@@ -2,7 +2,7 @@
   "name": "personal-api",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "server.ts",
   "scripts": {
     "fix": "npx prettier --write \"**/*.ts\"",
     "prestart": "npm run fix",

@@ -17,7 +17,7 @@ function verifyJWT(token: string): string | object {
   return userToken;
 }
 
-function cookies<Type>(res: Response, user: Type, refreshToken: Type): void {
+function cookies<Type>(res: Response, user: Type, refreshToken: string): void {
   const accessTokenJWT = createJWT(user);
   const refreshTokenJWT = createJWT({ user, refreshToken });
   const timeLimit = 1000 * 60 * 60 * 24;

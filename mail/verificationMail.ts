@@ -5,8 +5,8 @@ import { StatusCodes } from "http-status-codes";
 
 async function verificationEmail(
   email: string,
-  origin: string,
   token: string,
+  origin: string,
 ): Promise<void> {
   try {
     const URL = `${origin}/user/verify-email?token=${token}&email=${email}`;

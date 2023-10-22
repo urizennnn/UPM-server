@@ -8,8 +8,7 @@ async function auth(req: Request, res: Response, next: NextFunction) {
   try {
     const { accessToken, refreshToken } = req.signedCookies;
     const payload = verifyJWT(refreshToken);
-    //@ts-ignore
-    if (!payload || !payload.user || !payload.user.UserId || !payload.refreshToken) {
+    if (!payload) {
       throw new CustomAPIErrorHandler(
         "Invalid JWT payload",
         StatusCodes.BAD_REQUEST,

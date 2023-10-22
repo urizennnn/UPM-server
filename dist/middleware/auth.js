@@ -11,8 +11,7 @@ async function auth(req, res, next) {
     try {
         const { accessToken, refreshToken } = req.signedCookies;
         const payload = (0, jwt_1.verifyJWT)(refreshToken);
-        //@ts-ignore
-        if (!payload || !payload.user || !payload.user.UserId || !payload.refreshToken) {
+        if (!payload) {
             throw new custom_error_1.default("Invalid JWT payload", http_status_codes_1.StatusCodes.BAD_REQUEST);
         }
         const existing = await token_1.default.findOne({
