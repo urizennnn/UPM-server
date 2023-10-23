@@ -9,24 +9,16 @@ async function loginAlert(email: string): Promise<void> {
 
     Mail.setApiKey(process.env.SENDGRID_API_KEY as string);
 
-    const msg: {
-      to: string;
-      from: string;
-      subject: string;
-      html: string;
-    } = {
+    const msg = {
       to: email,
       from: process.env.VERIFIED_EMAIL as string,
       subject: "New Login Alert",
       html: html,
     };
-
+    // console.log(msg)
     await Mail.send(msg);
-  } catch (error) {
-    throw new CustomAPIErrorHandler(
-      "Internal Server Error",
-      StatusCodes.INTERNAL_SERVER_ERROR,
-    );
+  } catch (error: any) {
+    throw new CustomAPIErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR);
   }
 }
 

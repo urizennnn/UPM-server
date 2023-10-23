@@ -1,14 +1,6 @@
 import { Schema, model, Document } from "mongoose";
 import mongoose from "mongoose";
-
-interface TokenI extends Document {
-  refreshToken: string;
-  userAgent: string;
-  isValid: boolean;
-  UserId: object;
-  email: string;
-  ip: string;
-}
+import { TokenI } from "../Interfaces/token";
 
 const TokenSchema: Schema = new Schema<TokenI>(
   {

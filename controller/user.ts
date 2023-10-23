@@ -15,8 +15,8 @@ import {
   detailsUpdated,
   forgotPassword,
 } from "../mail/index";
-//@ts-ignore
-import { deleteToken } from "./tokenDeletion";
+
+import deleteToken from "./tokenDeletion";
 import {
   getMac,
   createHash,
@@ -47,9 +47,9 @@ export async function createUser(req: Request, res: Response): Promise<void> {
     //@ts-ignore
     await verificationEmail(newUser.email, newUser.verificationToken, origin);
     res.status(StatusCodes.CREATED).json({ tokenUser });
-  } catch (err) {
+  } catch (err: any) {
     throw new CustomAPIErrorHandler(
-      "Internal Server Error",
+      err.message,
       StatusCodes.INTERNAL_SERVER_ERROR,
     );
   }
@@ -117,10 +117,7 @@ export async function login(req: Request, res: Response): Promise<void> {
     const existingUser = await User.findOne({ email });
 
     if (!existingUser) {
-      throw new CustomAPIErrorHandler(
-        "User not found",
-        StatusCodes.INTERNAL_SERVER_ERROR,
-      );
+      throw new CustomAPIErrorHandler("User not found", StatusCodes.NOT_FOUND);
     }
 
     const isPasswordCorrect = await bcryptjs.compare(
@@ -141,56 +138,65 @@ export async function login(req: Request, res: Response): Promise<void> {
         StatusCodes.UNAUTHORIZED,
       );
     }
-    let devicefound: boolean = false;
-    const devices: any = existingUser.Device;
-    const curDevice = getMac();
-    devices.forEach(async (device: number | string) => {
-      if (device === curDevice) {
-        devicefound = true;
-        return;
-      }
-      if (!devicefound) await loginAlert(existingUser.email);
-      const tokenUser: object = {
-        email: existingUser.email,
-        UserId: existingUser._id,
-      };
-      let refreshToken: string;
-      const existingToken = await Token.findOne({ user: existingUser._id });
 
-      if (existingToken) {
-        const { isValid } = existingToken;
-        if (!isValid) {
-          throw new CustomAPIErrorHandler(
-            "Invalid Credentials",
-            StatusCodes.UNAUTHORIZED,
-          );
-        }
-        refreshToken = generateRefreshToken();
-        const userAgent = req.headers["user-agent"];
-        const ip = req.ip;
-        const userToken: object = {
-          email,
-          refreshToken,
-          ip,
-          userAgent,
-          UserId: existingUser._id,
-        };
+    let deviceFound: boolean = true;
+    const devices: (number | string)[] = existingUser.Device;
+    const curDevice: string = getMac();
 
-        await Token.create(userToken);
-        cookies(res, tokenUser, refreshToken);
-        const UserPasswords = await Manager.findOne({ email });
-        return res
-          .status(StatusCodes.OK)
-          .json({ message: "Logged in", UserPasswords });
+    // console.log(`This is the MAC :${curDevice}`);
+    devices.forEach((device) => {
+      // console.log(device, curDevice);
+      if (device !== curDevice) {
+        deviceFound = false;
+        console.log("Ran Through");
       }
     });
-  } catch (err) {
-    throw new CustomAPIErrorHandler(
-      "Interna Server Error",
-      StatusCodes.INTERNAL_SERVER_ERROR,
-    );
+
+    if (deviceFound) {
+      await loginAlert(existingUser.email);
+    }
+
+    const tokenUser: object = {
+      email: existingUser.email,
+      UserId: existingUser._id,
+    };
+
+    let refreshToken: string;
+    const existingToken = await Token.findOne({ user: existingUser._id });
+
+    if (existingToken) {
+      const { isValid } = existingToken;
+      if (!isValid) {
+        throw new CustomAPIErrorHandler(
+          "Invalid Credentials",
+          StatusCodes.UNAUTHORIZED,
+        );
+      }
+
+      refreshToken = generateRefreshToken();
+      const userAgent = req.headers["user-agent"];
+      const ip = req.ip;
+      const userToken: object = {
+        email,
+        refreshToken,
+        ip,
+        userAgent,
+        UserId: existingUser._id,
+      };
+
+      await Token.create(userToken);
+      cookies(res, tokenUser, refreshToken);
+    }
+
+    const UserPasswords = await Manager.findOne({ email });
+
+    res.status(StatusCodes.OK).json({ message: "Logged in", UserPasswords });
+  } catch (err: any) {
+    throw new CustomAPIErrorHandler(err, StatusCodes.INTERNAL_SERVER_ERROR);
   }
 }
+
+export default login;
 
 export async function logout(req: Request, res: Response): Promise<void> {
   try {

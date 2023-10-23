@@ -1,19 +1,8 @@
 import bcrypt from "bcryptjs";
 import { Schema, model, Document } from "mongoose";
 import { config } from "dotenv";
-
+import { User } from "../Interfaces/user";
 config();
-
-interface User extends Document {
-  email: string;
-  password: string;
-  isVerified: boolean;
-  verificationToken: string | undefined;
-  verified: Date | number;
-  passwordToken: string | null;
-  passTokenExpiration: Date | string;
-  Device?: Array<number | undefined>;
-}
 
 const userSchema: Schema = new Schema<User>(
   {

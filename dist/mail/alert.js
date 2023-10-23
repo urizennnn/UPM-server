@@ -17,10 +17,11 @@ async function loginAlert(email) {
             subject: "New Login Alert",
             html: html,
         };
+        // console.log(msg)
         await mail_1.default.send(msg);
     }
     catch (error) {
-        throw new custom_error_1.default("Internal Server Error", http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR);
+        throw new custom_error_1.default(error, http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR);
     }
 }
 exports.default = loginAlert;
