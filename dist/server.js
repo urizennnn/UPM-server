@@ -50,9 +50,6 @@ app.use((0, express_mongo_sanitize_1.default)());
 app.use((0, errorhandler_1.default)());
 app.use("/api/v1/user", user_1.default);
 app.use("/api/v1/pass", password_1.default);
-app.use("/", (req, res) => {
-    res.status(200).json("Hello");
-});
 (async () => {
     try {
         const connectionString = process.env.CONNECTION_STRING || undefined;

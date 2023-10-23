@@ -13,8 +13,7 @@ const http_status_codes_1 = require("http-status-codes");
 const jwt_1 = require("../utils/jwt");
 const crypto_1 = __importDefault(require("crypto"));
 const index_1 = require("../mail/index");
-//@ts-ignore
-const tokenDeletion_1 = require("./tokenDeletion");
+const tokenDeletion_1 = __importDefault(require("./tokenDeletion"));
 const helper_1 = require("./helper");
 const origin = process.env.ORIGIN;
 async function createUser(req, res) {
@@ -38,7 +37,7 @@ async function createUser(req, res) {
         res.status(http_status_codes_1.StatusCodes.CREATED).json({ tokenUser });
     }
     catch (err) {
-        throw new custom_error_1.default("Internal Server Error", http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR);
+        throw new custom_error_1.default(err.message, http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR);
     }
 }
 exports.createUser = createUser;
@@ -89,7 +88,7 @@ async function login(req, res) {
         }
         const existingUser = await user_1.default.findOne({ email });
         if (!existingUser) {
-            throw new custom_error_1.default("User not found", http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR);
+            throw new custom_error_1.default("User not found", http_status_codes_1.StatusCodes.NOT_FOUND);
         }
         const isPasswordCorrect = await bcryptjs_1.default.compare(password, existingUser.password);
         if (!isPasswordCorrect) {
@@ -98,51 +97,53 @@ async function login(req, res) {
         if (!existingUser.isVerified) {
             throw new custom_error_1.default("Please verify your email", http_status_codes_1.StatusCodes.UNAUTHORIZED);
         }
-        let devicefound = false;
+        let deviceFound = true;
         const devices = existingUser.Device;
         const curDevice = (0, helper_1.getMac)();
-        devices.forEach(async (device) => {
-            if (device === curDevice) {
-                devicefound = true;
-                return;
-            }
-            if (!devicefound)
-                await (0, index_1.loginAlert)(existingUser.email);
-            const tokenUser = {
-                email: existingUser.email,
-                UserId: existingUser._id,
-            };
-            let refreshToken;
-            const existingToken = await token_1.default.findOne({ user: existingUser._id });
-            if (existingToken) {
-                const { isValid } = existingToken;
-                if (!isValid) {
-                    throw new custom_error_1.default("Invalid Credentials", http_status_codes_1.StatusCodes.UNAUTHORIZED);
-                }
-                refreshToken = (0, helper_1.generateRefreshToken)();
-                const userAgent = req.headers["user-agent"];
-                const ip = req.ip;
-                const userToken = {
-                    email,
-                    refreshToken,
-                    ip,
-                    userAgent,
-                    UserId: existingUser._id,
-                };
-                await token_1.default.create(userToken);
-                (0, jwt_1.cookies)(res, tokenUser, refreshToken);
-                const UserPasswords = await password_1.default.findOne({ email });
-                return res
-                    .status(http_status_codes_1.StatusCodes.OK)
-                    .json({ message: "Logged in", UserPasswords });
+        // console.log(`This is the MAC :${curDevice}`);
+        devices.forEach((device) => {
+            // console.log(device, curDevice);
+            if (device !== curDevice) {
+                deviceFound = false;
+                console.log("Ran Through");
             }
         });
+        if (deviceFound) {
+            await (0, index_1.loginAlert)(existingUser.email);
+        }
+        const tokenUser = {
+            email: existingUser.email,
+            UserId: existingUser._id,
+        };
+        let refreshToken;
+        const existingToken = await token_1.default.findOne({ user: existingUser._id });
+        if (existingToken) {
+            const { isValid } = existingToken;
+            if (!isValid) {
+                throw new custom_error_1.default("Invalid Credentials", http_status_codes_1.StatusCodes.UNAUTHORIZED);
+            }
+            refreshToken = (0, helper_1.generateRefreshToken)();
+            const userAgent = req.headers["user-agent"];
+            const ip = req.ip;
+            const userToken = {
+                email,
+                refreshToken,
+                ip,
+                userAgent,
+                UserId: existingUser._id,
+            };
+            await token_1.default.create(userToken);
+            (0, jwt_1.cookies)(res, tokenUser, refreshToken);
+        }
+        const UserPasswords = await password_1.default.findOne({ email });
+        res.status(http_status_codes_1.StatusCodes.OK).json({ message: "Logged in", UserPasswords });
     }
     catch (err) {
-        throw new custom_error_1.default("Interna Server Error", http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR);
+        throw new custom_error_1.default(err, http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR);
     }
 }
 exports.login = login;
+exports.default = login;
 async function logout(req, res) {
     try {
         const { email, password } = req.body;
@@ -157,7 +158,7 @@ async function logout(req, res) {
         if (!isPasswordCorrect) {
             throw new custom_error_1.default("User not found", http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR);
         }
-        await (0, tokenDeletion_1.deleteToken)(email);
+        await (0, tokenDeletion_1.default)(email);
         res.cookie("refreshToken", "", {
             httpOnly: true,
             expires: new Date(Date.now()),

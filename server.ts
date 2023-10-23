@@ -25,10 +25,6 @@ app.use(errorhander());
 app.use("/api/v1/user", userRoute);
 app.use("/api/v1/pass", passwordRoute);
 
-app.use("/", (req: Request, res: Response) => {
-  res.status(200).json("Hello");
-});
-
 (async () => {
   try {
     const connectionString = process.env.CONNECTION_STRING || undefined;

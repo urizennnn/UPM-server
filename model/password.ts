@@ -1,14 +1,5 @@
 import { Schema, model, Document } from "mongoose";
-
-interface ManagerI extends Document {
-  email: string;
-  passManager: Map<string, PassManagerValue>;
-}
-
-interface PassManagerValue {
-  someField: string;
-  anotherField: number;
-}
+import { ManagerI, PassManagerValue } from "../Interfaces/password";
 
 const ManagerSchema: Schema = new Schema<ManagerI>({
   email: {

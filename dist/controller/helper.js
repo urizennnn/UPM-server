@@ -22,19 +22,26 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.generateRefreshToken = exports.createVerificationToken = exports.createHash = exports.getMac = void 0;
 const os = __importStar(require("os"));
 const crypto = __importStar(require("crypto"));
+const custom_error_1 = __importDefault(require("../error/custom-error"));
+const http_status_codes_1 = require("http-status-codes");
 function getMac() {
-    const networkInterfaces = os.networkInterfaces();
-    const defaultInterface = networkInterfaces["Wi-Fi"] || networkInterfaces["Ethernet"];
-    if (defaultInterface) {
-        return defaultInterface[0].mac || null;
+    try {
+        const networkInterfaces = os.networkInterfaces();
+        const defaultInterface = networkInterfaces.eth0;
+        if (!defaultInterface) {
+            throw new custom_error_1.default("'No Address found", http_status_codes_1.StatusCodes.BAD_REQUEST);
+        }
+        return defaultInterface[1].mac;
     }
-    else {
-        console.error("MAC address not found.");
-        return null;
+    catch (error) {
+        throw new custom_error_1.default(error, http_status_codes_1.StatusCodes.BAD_REQUEST);
     }
 }
 exports.getMac = getMac;

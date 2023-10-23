@@ -1,16 +1,22 @@
 import * as os from "os";
 import * as crypto from "crypto";
+import CustomAPIErrorHandler from "../error/custom-error";
+import { StatusCodes } from "http-status-codes";
 
-function getMac(): string | null {
-  const networkInterfaces = os.networkInterfaces();
-  const defaultInterface =
-    networkInterfaces["Wi-Fi"] || networkInterfaces["Ethernet"];
+function getMac(): string {
+  try {
+    const networkInterfaces = os.networkInterfaces();
+    const defaultInterface = networkInterfaces.eth0;
 
-  if (defaultInterface) {
-    return defaultInterface[0].mac || null;
-  } else {
-    console.error("MAC address not found.");
-    return null;
+    if (!defaultInterface) {
+      throw new CustomAPIErrorHandler(
+        "'No Address found",
+        StatusCodes.BAD_REQUEST,
+      );
+    }
+    return defaultInterface[1].mac;
+  } catch (error: any) {
+    throw new CustomAPIErrorHandler(error, StatusCodes.BAD_REQUEST);
   }
 }
 
