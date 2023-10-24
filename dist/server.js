@@ -39,24 +39,30 @@ const user_1 = __importDefault(require("./routes/user"));
 const password_1 = __importDefault(require("./routes/password"));
 dotenv.config();
 const app = (0, express_1.default)();
-const PORT = 8080;
-// Middleware setup
+const PORT = process.env.PORT || 8080;
 app.use((0, cors_1.default)());
 app.use((0, morgan_1.default)("dev"));
 app.use(express_1.default.json());
-app.use((0, cookie_parser_1.default)());
+app.use((0, cookie_parser_1.default)(process.env.JWT_SECRET));
 app.use((0, helmet_1.default)());
 app.use((0, express_mongo_sanitize_1.default)());
 app.use((0, errorhandler_1.default)());
 app.use("/api/v1/user", user_1.default);
-app.use("/api/v1/pass", password_1.default);
+app.use("/api/v1/password", password_1.default);
 (async () => {
     try {
         const connectionString = process.env.CONNECTION_STRING || undefined;
         await DB.connectDB(connectionString);
         console.log("Connected to the database");
-        app.listen(PORT, () => {
+        const server = app.listen(PORT, () => {
             console.log(`Server is running on http://localhost:${PORT}`);
+        });
+        process.on("SIGINT", () => {
+            console.log("Shutting down...");
+            server.close(() => {
+                console.log("Server closed.");
+                process.exit(0);
+            });
         });
     }
     catch (error) {

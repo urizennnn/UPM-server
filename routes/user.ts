@@ -18,8 +18,5 @@ router.delete("/logout", auth, logout);
 router.post("/verify-email", verifyEmail);
 router.post("/forgot-password", forgotPasswordUser);
 router.post("/reset-password", resetPassword);
-router.get("/test", (req: Request, res: Response) => {
-  res.send("Hit");
-});
 
 export default router;

@@ -4,34 +4,48 @@ import CustomAPIErrorHandler from "../error/custom-error";
 import { StatusCodes } from "http-status-codes";
 import * as bcrypt from "bcrypt";
 import { Request, Response } from "express";
-import { promises } from "dns";
 
 export async function createpasswordEntry(
   req: Request,
   res: Response,
 ): Promise<any> {
-  const { email } = req.body;
+  try {
+    const { email, name, password } = req.body;
 
-  const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ email });
 
-  if (!existingUser) {
+    if (!existingUser) {
+      throw new CustomAPIErrorHandler(
+        "User does not exist. Please create a user with this email and try again.",
+        StatusCodes.BAD_REQUEST,
+      );
+    }
+
+    const existingManager = await Manager.findOne({ email });
+    if (existingManager) {
+      throw new CustomAPIErrorHandler(
+        "Password manager already exists for this user. Proceed to update.",
+        StatusCodes.BAD_REQUEST,
+      );
+    }
+
+
+    const newInput: object = {
+      email: email,
+      passManager: {
+      siteName:name,
+      sitePassword:password
+    }}
+
+    const createdManager = await Manager.create(newInput);
+    return res.status(StatusCodes.CREATED).json(createdManager);
+  } catch (error) {
+    console.error(error);
     throw new CustomAPIErrorHandler(
-      "User does not exist. Please create a user with this email and try again.",
-      StatusCodes.BAD_REQUEST,
+      "Error creating Manager document",
+      StatusCodes.INTERNAL_SERVER_ERROR,
     );
   }
-
-  const existingManager = await Manager.findOne({ email });
-  if (existingManager) {
-    throw new CustomAPIErrorHandler(
-      "Password manager already exists for this user. Proceed to update.",
-      StatusCodes.BAD_REQUEST,
-    );
-  }
-
-  const newInput = await Manager.create(req.body);
-
-  return res.status(StatusCodes.CREATED).json(newInput);
 }
 
 export async function addPassword(req: Request, res: Response): Promise<any> {
@@ -104,15 +118,6 @@ export async function deletePassword(
     }
     const pass: any = manager.passManager;
 
-    for (const [key, value] of pass) {
-      if (key === name) {
-        pass.delete(key);
-        await manager.save();
-      }
-    }
-
-    res.status(200).json(pass);
-
     for (const [key, value] of Object.entries(pass)) {
       if (key === name) {
         delete pass[key];
@@ -126,4 +131,24 @@ export async function deletePassword(
       StatusCodes.INTERNAL_SERVER_ERROR,
     );
   }
+}
+
+export async function showPassword(req:Request,res:Response):Promise<any>{
+try{
+const {email} = req.body
+const exist = await Manager.findOne({email})
+if(!exist){
+  throw new CustomAPIErrorHandler(
+      'No Passwords to Show',
+      StatusCodes.INTERNAL_SERVER_ERROR,
+    );
+}
+
+return res.status(StatusCodes.OK).json(exist)
+}catch(err:any){
+throw new CustomAPIErrorHandler(
+      err.message,
+      StatusCodes.INTERNAL_SERVER_ERROR,
+    );
+}
 }

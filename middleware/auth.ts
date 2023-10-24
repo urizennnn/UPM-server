@@ -29,11 +29,8 @@ async function auth(req: Request, res: Response, next: NextFunction) {
     //@ts-ignore
     req.user = payload.user;
     next();
-  } catch (error) {
-    throw new CustomAPIErrorHandler(
-      "Something Went Wrong",
-      StatusCodes.BAD_REQUEST,
-    );
+  } catch (error: any) {
+    throw new CustomAPIErrorHandler(error, StatusCodes.BAD_REQUEST);
   }
 }
 

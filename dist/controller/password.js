@@ -26,24 +26,37 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deletePassword = exports.addPassword = exports.createpasswordEntry = void 0;
+exports.showPassword = exports.deletePassword = exports.addPassword = exports.createpasswordEntry = void 0;
 const user_1 = __importDefault(require("../model/user"));
 const password_1 = __importDefault(require("../model/password"));
 const custom_error_1 = __importDefault(require("../error/custom-error"));
 const http_status_codes_1 = require("http-status-codes");
 const bcrypt = __importStar(require("bcrypt"));
 async function createpasswordEntry(req, res) {
-    const { email } = req.body;
-    const existingUser = await user_1.default.findOne({ email });
-    if (!existingUser) {
-        throw new custom_error_1.default("User does not exist. Please create a user with this email and try again.", http_status_codes_1.StatusCodes.BAD_REQUEST);
+    try {
+        const { email, name, password } = req.body;
+        const existingUser = await user_1.default.findOne({ email });
+        if (!existingUser) {
+            throw new custom_error_1.default("User does not exist. Please create a user with this email and try again.", http_status_codes_1.StatusCodes.BAD_REQUEST);
+        }
+        const existingManager = await password_1.default.findOne({ email });
+        if (existingManager) {
+            throw new custom_error_1.default("Password manager already exists for this user. Proceed to update.", http_status_codes_1.StatusCodes.BAD_REQUEST);
+        }
+        const newInput = {
+            email: email,
+            passManager: {
+                siteName: name,
+                sitePassword: password
+            }
+        };
+        const createdManager = await password_1.default.create(newInput);
+        return res.status(http_status_codes_1.StatusCodes.CREATED).json(createdManager);
     }
-    const existingManager = await password_1.default.findOne({ email });
-    if (existingManager) {
-        throw new custom_error_1.default("Password manager already exists for this user. Proceed to update.", http_status_codes_1.StatusCodes.BAD_REQUEST);
+    catch (error) {
+        console.error(error);
+        throw new custom_error_1.default("Error creating Manager document", http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR);
     }
-    const newInput = await password_1.default.create(req.body);
-    return res.status(http_status_codes_1.StatusCodes.CREATED).json(newInput);
 }
 exports.createpasswordEntry = createpasswordEntry;
 async function addPassword(req, res) {
@@ -82,13 +95,6 @@ async function deletePassword(req, res) {
             throw new custom_error_1.default("No Passwords to delete", http_status_codes_1.StatusCodes.BAD_REQUEST);
         }
         const pass = manager.passManager;
-        for (const [key, value] of pass) {
-            if (key === name) {
-                pass.delete(key);
-                await manager.save();
-            }
-        }
-        res.status(200).json(pass);
         for (const [key, value] of Object.entries(pass)) {
             if (key === name) {
                 delete pass[key];
@@ -102,3 +108,17 @@ async function deletePassword(req, res) {
     }
 }
 exports.deletePassword = deletePassword;
+async function showPassword(req, res) {
+    try {
+        const { email } = req.body;
+        const exist = await password_1.default.findOne({ email });
+        if (!exist) {
+            throw new custom_error_1.default('No Passwords to Show', http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR);
+        }
+        return res.status(http_status_codes_1.StatusCodes.OK).json(exist);
+    }
+    catch (err) {
+        throw new custom_error_1.default(err.message, http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR);
+    }
+}
+exports.showPassword = showPassword;

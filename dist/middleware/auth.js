@@ -30,7 +30,7 @@ async function auth(req, res, next) {
         next();
     }
     catch (error) {
-        throw new custom_error_1.default("Something Went Wrong", http_status_codes_1.StatusCodes.BAD_REQUEST);
+        throw new custom_error_1.default(error, http_status_codes_1.StatusCodes.BAD_REQUEST);
     }
 }
 exports.default = auth;

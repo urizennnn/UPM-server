@@ -4,6 +4,8 @@
   "description": "",
   "main": "server.ts",
   "scripts": {
+    "fix": "npx prettier --write \"**/*.ts\"",
+    "prestart": "npm run fix",
     "start": "nodemon ./dist/server.js"
   },
   "keywords": [],

@@ -25,6 +25,8 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.cookies = exports.verifyJWT = exports.createJWT = void 0;
 const jwt = __importStar(require("jsonwebtoken"));
+//@ts-ignore
+//help
 function createJWT(payload) {
     const token = jwt.sign(payload, process.env.JWT_SECRET, {
         expiresIn: "1h",
@@ -38,14 +40,15 @@ function verifyJWT(token) {
 }
 exports.verifyJWT = verifyJWT;
 function cookies(res, user, refreshToken) {
+    console.log("Ran through cookies");
     const accessTokenJWT = createJWT(user);
     const refreshTokenJWT = createJWT({ user, refreshToken });
     const timeLimit = 1000 * 60 * 60 * 24;
-    res.cookie("accessToken", refreshTokenJWT, {
+    res.cookie("accessToken", accessTokenJWT, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         signed: true,
-        maxAge: 1000,
+        maxAge: timeLimit,
     });
     res.cookie("refreshToken", refreshTokenJWT, {
         httpOnly: true,

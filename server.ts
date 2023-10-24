@@ -1,6 +1,6 @@
 import express, { Request, Response } from "express";
 import * as dotenv from "dotenv";
-import errorhander from "errorhandler";
+import errorhandler from "errorhandler";
 import cors from "cors";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
@@ -11,27 +11,34 @@ import userRoute from "./routes/user";
 import passwordRoute from "./routes/password";
 dotenv.config();
 const app = express();
-const PORT: number = 8080;
-
-// Middleware setup
+const PORT = process.env.PORT || 8080;
 app.use(cors());
 app.use(morgan("dev"));
 app.use(express.json());
-app.use(cookieParser());
+app.use(cookieParser(process.env.JWT_SECRET));
 app.use(helmet());
 app.use(mongoSanitize());
-app.use(errorhander());
+app.use(errorhandler());
 
 app.use("/api/v1/user", userRoute);
-app.use("/api/v1/pass", passwordRoute);
+app.use("/api/v1/password", passwordRoute);
 
 (async () => {
   try {
     const connectionString = process.env.CONNECTION_STRING || undefined;
     await DB.connectDB(connectionString);
     console.log("Connected to the database");
-    app.listen(PORT, () => {
+
+    const server = app.listen(PORT, () => {
       console.log(`Server is running on http://localhost:${PORT}`);
+    });
+
+    process.on("SIGINT", () => {
+      console.log("Shutting down...");
+      server.close(() => {
+        console.log("Server closed.");
+        process.exit(0);
+      });
     });
   } catch (error) {
     console.error("Something went wrong:", error);

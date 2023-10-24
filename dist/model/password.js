@@ -8,10 +8,8 @@ const ManagerSchema = new mongoose_1.Schema({
     },
     passManager: {
         type: Map,
-        of: new mongoose_1.Schema({
-            someField: { type: String },
-            anotherField: { type: Number },
-        }),
+        of: mongoose_1.Schema.Types.Mixed,
+        required: true,
     },
 });
 const Manager = (0, mongoose_1.model)("Manager", ManagerSchema);

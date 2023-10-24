@@ -43,10 +43,10 @@ export async function createUser(req: Request, res: Response): Promise<void> {
       verificationToken,
       Device,
     });
-    const tokenUser = { email: newUser.email, UserId: newUser._id };
+    const tokenUser: object = { email: newUser.email, UserId: newUser._id };
     //@ts-ignore
     await verificationEmail(newUser.email, newUser.verificationToken, origin);
-    res.status(StatusCodes.CREATED).json({ tokenUser });
+    res.status(StatusCodes.CREATED).json({ tokenUser, verificationToken });
   } catch (err: any) {
     throw new CustomAPIErrorHandler(
       err.message,
@@ -148,11 +148,12 @@ export async function login(req: Request, res: Response): Promise<void> {
       // console.log(device, curDevice);
       if (device !== curDevice) {
         deviceFound = false;
-        console.log("Ran Through");
+        console.log("Ran Through Device");
       }
     });
 
     if (deviceFound) {
+      console.log("Found Device");
       await loginAlert(existingUser.email);
     }
 
@@ -165,6 +166,7 @@ export async function login(req: Request, res: Response): Promise<void> {
     const existingToken = await Token.findOne({ user: existingUser._id });
 
     if (existingToken) {
+      console.log("Ran through Token");
       const { isValid } = existingToken;
       if (!isValid) {
         throw new CustomAPIErrorHandler(
@@ -172,21 +174,20 @@ export async function login(req: Request, res: Response): Promise<void> {
           StatusCodes.UNAUTHORIZED,
         );
       }
-
-      refreshToken = generateRefreshToken();
-      const userAgent = req.headers["user-agent"];
-      const ip = req.ip;
-      const userToken: object = {
-        email,
-        refreshToken,
-        ip,
-        userAgent,
-        UserId: existingUser._id,
-      };
-
-      await Token.create(userToken);
-      cookies(res, tokenUser, refreshToken);
     }
+    refreshToken = generateRefreshToken();
+    const userAgent = req.headers["user-agent"];
+    const ip = req.ip;
+    const userToken: object = {
+      email,
+      refreshToken,
+      ip,
+      userAgent,
+      UserId: existingUser._id,
+    };
+
+    await Token.create(userToken);
+    cookies(res, tokenUser, refreshToken);
 
     const UserPasswords = await Manager.findOne({ email });
 
@@ -195,8 +196,6 @@ export async function login(req: Request, res: Response): Promise<void> {
     throw new CustomAPIErrorHandler(err, StatusCodes.INTERNAL_SERVER_ERROR);
   }
 }
-
-export default login;
 
 export async function logout(req: Request, res: Response): Promise<void> {
   try {

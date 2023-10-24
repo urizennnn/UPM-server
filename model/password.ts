@@ -1,5 +1,5 @@
 import { Schema, model, Document } from "mongoose";
-import { ManagerI, PassManagerValue } from "../Interfaces/password";
+import { ManagerI } from "../Interfaces/password";
 
 const ManagerSchema: Schema = new Schema<ManagerI>({
   email: {
@@ -8,10 +8,8 @@ const ManagerSchema: Schema = new Schema<ManagerI>({
   },
   passManager: {
     type: Map,
-    of: new Schema<PassManagerValue>({
-      someField: { type: String },
-      anotherField: { type: Number },
-    }),
+    of: Schema.Types.Mixed,
+    required: true,
   },
 });
 

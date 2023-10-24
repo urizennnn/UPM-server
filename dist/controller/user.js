@@ -34,7 +34,7 @@ async function createUser(req, res) {
         const tokenUser = { email: newUser.email, UserId: newUser._id };
         //@ts-ignore
         await (0, index_1.verificationEmail)(newUser.email, newUser.verificationToken, origin);
-        res.status(http_status_codes_1.StatusCodes.CREATED).json({ tokenUser });
+        res.status(http_status_codes_1.StatusCodes.CREATED).json({ tokenUser, verificationToken });
     }
     catch (err) {
         throw new custom_error_1.default(err.message, http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR);
@@ -105,10 +105,11 @@ async function login(req, res) {
             // console.log(device, curDevice);
             if (device !== curDevice) {
                 deviceFound = false;
-                console.log("Ran Through");
+                console.log("Ran Through Device");
             }
         });
         if (deviceFound) {
+            console.log("Found Device");
             await (0, index_1.loginAlert)(existingUser.email);
         }
         const tokenUser = {
@@ -118,23 +119,24 @@ async function login(req, res) {
         let refreshToken;
         const existingToken = await token_1.default.findOne({ user: existingUser._id });
         if (existingToken) {
+            console.log("Ran through Token");
             const { isValid } = existingToken;
             if (!isValid) {
                 throw new custom_error_1.default("Invalid Credentials", http_status_codes_1.StatusCodes.UNAUTHORIZED);
             }
-            refreshToken = (0, helper_1.generateRefreshToken)();
-            const userAgent = req.headers["user-agent"];
-            const ip = req.ip;
-            const userToken = {
-                email,
-                refreshToken,
-                ip,
-                userAgent,
-                UserId: existingUser._id,
-            };
-            await token_1.default.create(userToken);
-            (0, jwt_1.cookies)(res, tokenUser, refreshToken);
         }
+        refreshToken = (0, helper_1.generateRefreshToken)();
+        const userAgent = req.headers["user-agent"];
+        const ip = req.ip;
+        const userToken = {
+            email,
+            refreshToken,
+            ip,
+            userAgent,
+            UserId: existingUser._id,
+        };
+        await token_1.default.create(userToken);
+        (0, jwt_1.cookies)(res, tokenUser, refreshToken);
         const UserPasswords = await password_1.default.findOne({ email });
         res.status(http_status_codes_1.StatusCodes.OK).json({ message: "Logged in", UserPasswords });
     }
@@ -143,7 +145,6 @@ async function login(req, res) {
     }
 }
 exports.login = login;
-exports.default = login;
 async function logout(req, res) {
     try {
         const { email, password } = req.body;

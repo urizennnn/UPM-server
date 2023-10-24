@@ -5,14 +5,12 @@ import {
   createpasswordEntry,
   addPassword,
   deletePassword,
+  showPassword
 } from "../controller/password";
 router
   .post("/createPassword", auth, createpasswordEntry)
   .patch("/addPassword", auth, addPassword)
-  .delete("/deletePassword", auth, deletePassword);
-
-router.get("/", (req: Request, res: Response) => {
-  res.send("Hit");
-});
+  .delete("/deletePassword", auth, deletePassword)
+  .get('/showPasswords',auth,showPassword)
 
 export default router;

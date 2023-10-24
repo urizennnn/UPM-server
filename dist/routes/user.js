@@ -13,7 +13,4 @@ router.delete("/logout", auth_1.default, user_1.logout);
 router.post("/verify-email", user_1.verifyEmail);
 router.post("/forgot-password", user_1.forgotPasswordUser);
 router.post("/reset-password", user_1.resetPassword);
-router.get("/test", (req, res) => {
-    res.send("Hit");
-});
 exports.default = router;

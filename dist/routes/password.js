@@ -10,8 +10,6 @@ const password_1 = require("../controller/password");
 router
     .post("/createPassword", auth_1.default, password_1.createpasswordEntry)
     .patch("/addPassword", auth_1.default, password_1.addPassword)
-    .delete("/deletePassword", auth_1.default, password_1.deletePassword);
-router.get("/", (req, res) => {
-    res.send("Hit");
-});
+    .delete("/deletePassword", auth_1.default, password_1.deletePassword)
+    .get('/showPasswords', auth_1.default, password_1.showPassword);
 exports.default = router;
