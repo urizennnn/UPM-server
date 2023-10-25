@@ -9,6 +9,7 @@ import mongoSanitize from "express-mongo-sanitize";
 import * as DB from "./db/connect";
 import userRoute from "./routes/user";
 import passwordRoute from "./routes/password";
+
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 8080;

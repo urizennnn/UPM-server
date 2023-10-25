@@ -26,11 +26,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.generateRefreshToken = exports.createVerificationToken = exports.createHash = exports.getMac = void 0;
+exports.decodeToken = exports.generateRefreshToken = exports.createVerificationToken = exports.createHash = exports.getMac = void 0;
 const os = __importStar(require("os"));
 const crypto = __importStar(require("crypto"));
 const custom_error_1 = __importDefault(require("../error/custom-error"));
 const http_status_codes_1 = require("http-status-codes");
+const jwt = __importStar(require("jsonwebtoken"));
+const user_1 = __importDefault(require("../model/user"));
 function getMac() {
     try {
         const networkInterfaces = os.networkInterfaces();
@@ -57,3 +59,19 @@ function generateRefreshToken() {
     return crypto.randomBytes(40).toString("hex");
 }
 exports.generateRefreshToken = generateRefreshToken;
+async function decodeToken(req, res) {
+    const token = req.signedCookies.refreshToken;
+    const decode = jwt.decode(token, { complete: true });
+    //@ts-ignore
+    const email = decode?.payload.user.email;
+    if (!email) {
+        throw new custom_error_1.default("No Token or User found", http_status_codes_1.StatusCodes.OK);
+    }
+    const user = await user_1.default.findOne({ email });
+    if (!user) {
+        console.log(user);
+        throw new custom_error_1.default("No User found", http_status_codes_1.StatusCodes.OK);
+    }
+    return email;
+}
+exports.decodeToken = decodeToken;

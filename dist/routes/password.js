@@ -8,8 +8,7 @@ const router = express_1.default.Router();
 const auth_1 = __importDefault(require("../middleware/auth"));
 const password_1 = require("../controller/password");
 router
-    .post("/createPassword", auth_1.default, password_1.createpasswordEntry)
-    .patch("/addPassword", auth_1.default, password_1.addPassword)
-    .delete("/deletePassword", auth_1.default, password_1.deletePassword)
-    .get('/showPasswords', auth_1.default, password_1.showPassword);
+    .get("/", auth_1.default, password_1.createPassword)
+    .delete("/delete-password", password_1.DeletePassword)
+    .get('/show', auth_1.default, password_1.showPasswords);
 exports.default = router;

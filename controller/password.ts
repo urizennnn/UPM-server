@@ -2,153 +2,59 @@ import User from "../model/user";
 import Manager from "../model/password";
 import CustomAPIErrorHandler from "../error/custom-error";
 import { StatusCodes } from "http-status-codes";
-import * as bcrypt from "bcrypt";
+import bcrypt from "bcrypt";
 import { Request, Response } from "express";
+import { decodeToken } from "./helper";
 
-export async function createpasswordEntry(
+import { connectRedis } from "./redist";
+
+export async function createPassword(
   req: Request,
   res: Response,
 ): Promise<any> {
   try {
-    const { email, name, password } = req.body;
+    const { name, password } = req.body;
+    const user: string = await decodeToken(req, res);
+    const client = await connectRedis();
 
-    const existingUser = await User.findOne({ email });
+    await client.HSET("Userpassword", name, password);
 
-    if (!existingUser) {
-      throw new CustomAPIErrorHandler(
-        "User does not exist. Please create a user with this email and try again.",
-        StatusCodes.BAD_REQUEST,
-      );
-    }
-
-    const existingManager = await Manager.findOne({ email });
-    if (existingManager) {
-      throw new CustomAPIErrorHandler(
-        "Password manager already exists for this user. Proceed to update.",
-        StatusCodes.BAD_REQUEST,
-      );
-    }
-
-
-    const newInput: object = {
-      email: email,
-      passManager: {
-      siteName:name,
-      sitePassword:password
-    }}
-
-    const createdManager = await Manager.create(newInput);
-    return res.status(StatusCodes.CREATED).json(createdManager);
-  } catch (error) {
-    console.error(error);
-    throw new CustomAPIErrorHandler(
-      "Error creating Manager document",
-      StatusCodes.INTERNAL_SERVER_ERROR,
-    );
-  }
+    const pass = await client.hGetAll("Userpassword");
+    return res.status(StatusCodes.OK).json({ user, pass });
+  } catch (error) {}
 }
 
-export async function addPassword(req: Request, res: Response): Promise<any> {
-  try {
-    const { email, name, password } = req.body;
-    const exists = await Manager.findOne({ email });
-
-    const exist = await User.findOne({ email });
-    if (!exist) {
-      throw new CustomAPIErrorHandler(
-        "User does not exist please create an account and try again",
-        StatusCodes.BAD_REQUEST,
-      );
-    }
-    if (!exists) {
-      throw new CustomAPIErrorHandler(
-        "'Please create a User or check the URL address and try again'",
-        StatusCodes.BAD_REQUEST,
-      );
-    }
-
-    const updatedUser = await Manager.findOneAndUpdate(
-      { email },
-      { $set: { [`passManager.${name}`]: password } },
-      { upsert: true, new: true },
-    );
-
-    await exists.save();
-
-    return res.status(201).json({ name, password });
-  } catch (error: any) {
-    throw new CustomAPIErrorHandler(
-      error.message,
-      StatusCodes.INTERNAL_SERVER_ERROR,
-    );
-  }
-}
-
-export async function deletePassword(
+export async function DeletePassword(
   req: Request,
   res: Response,
-): Promise<void> {
+): Promise<any> {
   try {
-    const { email, name, password } = req.body;
-    const user = await User.findOne({ email });
+    await decodeToken(req, res);
 
-    if (!user) {
-      throw new CustomAPIErrorHandler(
-        "User not found",
-        StatusCodes.BAD_REQUEST,
-      );
-    }
+    const { name } = req.body;
+    const client = await connectRedis();
+    const key: object = await client.hGetAll("Userpassword");
 
-    const isPasswordCorrect = await bcrypt.compare(password, user.password);
-
-    if (!isPasswordCorrect) {
-      throw new CustomAPIErrorHandler(
-        "Invalid password",
-        StatusCodes.BAD_REQUEST,
-      );
-    }
-
-    const manager = await Manager.findOne({ email });
-
-    if (!manager) {
-      throw new CustomAPIErrorHandler(
-        "No Passwords to delete",
-        StatusCodes.BAD_REQUEST,
-      );
-    }
-    const pass: any = manager.passManager;
-
-    for (const [key, value] of Object.entries(pass)) {
-      if (key === name) {
-        delete pass[key];
-        await manager.save();
+    for (const i of Object.keys(key)) {
+      if (name === i) {
+        const result = await client.hDel("Userpassword", name);
+        if (result === 1) {
+          return res.status(StatusCodes.OK).json("Deleted Successfuly");
+        } else {
+          return res
+            .status(StatusCodes.BAD_REQUEST)
+            .json("Something went wrong");
+        }
       }
     }
-    res.status(200).json(pass);
   } catch (error: any) {
-    throw new CustomAPIErrorHandler(
-      error.message,
-      StatusCodes.INTERNAL_SERVER_ERROR,
-    );
+    throw new CustomAPIErrorHandler(error, StatusCodes.INTERNAL_SERVER_ERROR);
   }
 }
 
-export async function showPassword(req:Request,res:Response):Promise<any>{
-try{
-const {email} = req.body
-const exist = await Manager.findOne({email})
-if(!exist){
-  throw new CustomAPIErrorHandler(
-      'No Passwords to Show',
-      StatusCodes.INTERNAL_SERVER_ERROR,
-    );
-}
+export async function showPasswords(req:Request,res:Response):Promise<any>{
+  const client = await connectRedis()
 
-return res.status(StatusCodes.OK).json(exist)
-}catch(err:any){
-throw new CustomAPIErrorHandler(
-      err.message,
-      StatusCodes.INTERNAL_SERVER_ERROR,
-    );
-}
+  const results = await client.hGetAll('Userpassword')
+  return res.status(StatusCodes.OK).json(results)
 }
