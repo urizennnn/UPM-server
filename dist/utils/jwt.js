@@ -25,11 +25,9 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.cookies = exports.verifyJWT = exports.createJWT = void 0;
 const jwt = __importStar(require("jsonwebtoken"));
-//@ts-ignore
-//help
 function createJWT(payload) {
     const token = jwt.sign(payload, process.env.JWT_SECRET, {
-        expiresIn: "1h",
+        expiresIn: process.env.JWT_LIMIT,
     });
     return token;
 }

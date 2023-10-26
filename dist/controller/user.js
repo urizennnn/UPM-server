@@ -5,7 +5,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.resetPassword = exports.forgotPasswordUser = exports.verifyEmail = exports.updateInfo = exports.logout = exports.login = exports.delUser = exports.showUser = exports.createUser = void 0;
 const user_1 = __importDefault(require("../model/user"));
-const password_1 = __importDefault(require("../model/password"));
 const token_1 = __importDefault(require("../model/token"));
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const custom_error_1 = __importDefault(require("../error/custom-error"));
@@ -13,9 +12,11 @@ const http_status_codes_1 = require("http-status-codes");
 const jwt_1 = require("../utils/jwt");
 const crypto_1 = __importDefault(require("crypto"));
 const index_1 = require("../mail/index");
+const redis_1 = require("./redis");
 const tokenDeletion_1 = __importDefault(require("./tokenDeletion"));
 const helper_1 = require("./helper");
 const origin = process.env.ORIGIN;
+const client = (0, redis_1.connectRedis)();
 async function createUser(req, res) {
     const { email, password } = req.body;
     try {
@@ -60,11 +61,11 @@ async function delUser(req, res) {
         if (!existingUser) {
             throw new custom_error_1.default("User not found", http_status_codes_1.StatusCodes.BAD_REQUEST);
         }
-        await Promise.all([
-            user_1.default.deleteOne({ email }),
-            password_1.default.deleteOne({ email }),
-            (0, index_1.deleted)(existingUser.email),
-        ]);
+        await Promise.all([user_1.default.deleteOne({ email }), (0, index_1.deleted)(existingUser.email)]);
+        const userDel = await (await client).DEL("Userpassword");
+        if (userDel !== 1) {
+            throw new custom_error_1.default("Error Deleting Password", http_status_codes_1.StatusCodes.BAD_REQUEST);
+        }
         res.cookie("refreshToken", "", {
             httpOnly: true,
             expires: new Date(Date.now()),
@@ -108,6 +109,8 @@ async function login(req, res) {
                 console.log("Ran Through Device");
             }
         });
+        //@ts-ignore
+        const UserPasswords = await (await client).hGetAll("Userpassword");
         if (deviceFound) {
             console.log("Found Device");
             await (0, index_1.loginAlert)(existingUser.email);
@@ -137,7 +140,6 @@ async function login(req, res) {
         };
         await token_1.default.create(userToken);
         (0, jwt_1.cookies)(res, tokenUser, refreshToken);
-        const UserPasswords = await password_1.default.findOne({ email });
         res.status(http_status_codes_1.StatusCodes.OK).json({ message: "Logged in", UserPasswords });
     }
     catch (err) {
@@ -152,10 +154,10 @@ async function logout(req, res) {
             throw new custom_error_1.default("Invalid Request", http_status_codes_1.StatusCodes.BAD_REQUEST);
         }
         const existingUser = await user_1.default.findOne({ email });
-        if (!existingUser) {
-            throw new custom_error_1.default("User not found", http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR);
-        }
-        const isPasswordCorrect = await bcryptjs_1.default.compare(password, existingUser.password);
+        await (0, helper_1.decodeToken)(req, res);
+        const isPasswordCorrect = await bcryptjs_1.default.compare(password, 
+        //@ts-ignore
+        existingUser.password);
         if (!isPasswordCorrect) {
             throw new custom_error_1.default("User not found", http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR);
         }
@@ -179,14 +181,15 @@ async function updateInfo(req, res) {
     try {
         const { email, oldPassword, newPassword } = req.body;
         const existingUser = await user_1.default.findOne({ email });
-        if (!existingUser) {
-            throw new custom_error_1.default("User not found or invalid credentials", http_status_codes_1.StatusCodes.BAD_REQUEST);
-        }
+        await (0, helper_1.decodeToken)(req, res);
         if (oldPassword && newPassword) {
-            const isOldPassValid = await bcryptjs_1.default.compare(oldPassword, existingUser.password);
+            const isOldPassValid = await bcryptjs_1.default.compare(oldPassword, 
+            //@ts-ignore
+            existingUser.password);
             if (!isOldPassValid) {
                 throw new custom_error_1.default("Invalid old password", http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR);
             }
+            //@ts-ignore
             existingUser.password = newPassword;
         }
         else {
@@ -196,7 +199,9 @@ async function updateInfo(req, res) {
             httpOnly: true,
             expires: new Date(Date.now()),
         });
+        //@ts-ignore
         await existingUser.save();
+        //@ts-ignore
         await (0, index_1.detailsUpdated)(existingUser.email);
         res
             .status(http_status_codes_1.StatusCodes.OK)

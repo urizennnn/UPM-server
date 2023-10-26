@@ -1,12 +1,11 @@
 import User from "../model/user";
-import Manager from "../model/password";
 import CustomAPIErrorHandler from "../error/custom-error";
 import { StatusCodes } from "http-status-codes";
 import bcrypt from "bcrypt";
 import { Request, Response } from "express";
 import { decodeToken } from "./helper";
 
-import { connectRedis } from "./redist";
+import { connectRedis } from "./redis";
 
 export async function createPassword(
   req: Request,
@@ -52,9 +51,9 @@ export async function DeletePassword(
   }
 }
 
-export async function showPasswords(req:Request,res:Response):Promise<any>{
-  const client = await connectRedis()
+export async function showPasswords(req: Request, res: Response): Promise<any> {
+  const client = await connectRedis();
 
-  const results = await client.hGetAll('Userpassword')
-  return res.status(StatusCodes.OK).json(results)
+  const results = await client.hGetAll("Userpassword");
+  return res.status(StatusCodes.OK).json(results);
 }

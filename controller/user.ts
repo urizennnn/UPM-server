@@ -1,6 +1,5 @@
 import { Request, Response } from "express";
 import User from "../model/user";
-import Manager from "../model/password";
 import Token from "../model/token";
 import bcryptjs from "bcryptjs";
 import CustomAPIErrorHandler from "../error/custom-error";
@@ -15,15 +14,18 @@ import {
   detailsUpdated,
   forgotPassword,
 } from "../mail/index";
-
+import { connectRedis } from "./redis";
 import deleteToken from "./tokenDeletion";
 import {
   getMac,
   createHash,
   createVerificationToken,
   generateRefreshToken,
+  decodeToken
 } from "./helper";
 const origin = process.env.ORIGIN as string;
+
+const client = connectRedis();
 
 export async function createUser(req: Request, res: Response): Promise<void> {
   const { email, password } = req.body;
@@ -79,11 +81,14 @@ export async function delUser(req: Request, res: Response): Promise<void> {
       );
     }
 
-    await Promise.all([
-      User.deleteOne({ email }),
-      Manager.deleteOne({ email }),
-      deleted(existingUser.email),
-    ]);
+    await Promise.all([User.deleteOne({ email }), deleted(existingUser.email)]);
+    const userDel = await (await client).DEL("Userpassword");
+    if (userDel !== 1) {
+      throw new CustomAPIErrorHandler(
+        "Error Deleting Password",
+        StatusCodes.BAD_REQUEST,
+      );
+    }
     res.cookie("refreshToken", "", {
       httpOnly: true,
       expires: new Date(Date.now()),
@@ -151,7 +156,8 @@ export async function login(req: Request, res: Response): Promise<void> {
         console.log("Ran Through Device");
       }
     });
-
+    //@ts-ignore
+    const UserPasswords: object = await (await client).hGetAll("Userpassword");
     if (deviceFound) {
       console.log("Found Device");
       await loginAlert(existingUser.email);
@@ -189,8 +195,6 @@ export async function login(req: Request, res: Response): Promise<void> {
     await Token.create(userToken);
     cookies(res, tokenUser, refreshToken);
 
-    const UserPasswords = await Manager.findOne({ email });
-
     res.status(StatusCodes.OK).json({ message: "Logged in", UserPasswords });
   } catch (err: any) {
     throw new CustomAPIErrorHandler(err, StatusCodes.INTERNAL_SERVER_ERROR);
@@ -207,14 +211,10 @@ export async function logout(req: Request, res: Response): Promise<void> {
       );
     }
     const existingUser = await User.findOne({ email });
-    if (!existingUser) {
-      throw new CustomAPIErrorHandler(
-        "User not found",
-        StatusCodes.INTERNAL_SERVER_ERROR,
-      );
-    }
+    await decodeToken(req,res)
     const isPasswordCorrect: boolean = await bcryptjs.compare(
       password,
+      //@ts-ignore
       existingUser.password,
     );
     if (!isPasswordCorrect) {
@@ -247,16 +247,12 @@ export async function updateInfo(req: Request, res: Response): Promise<void> {
   try {
     const { email, oldPassword, newPassword } = req.body;
     const existingUser = await User.findOne({ email });
-    if (!existingUser) {
-      throw new CustomAPIErrorHandler(
-        "User not found or invalid credentials",
-        StatusCodes.BAD_REQUEST,
-      );
-    }
+    await decodeToken(req,res)
 
     if (oldPassword && newPassword) {
       const isOldPassValid = await bcryptjs.compare(
         oldPassword,
+        //@ts-ignore
         existingUser.password,
       );
 
@@ -266,7 +262,7 @@ export async function updateInfo(req: Request, res: Response): Promise<void> {
           StatusCodes.INTERNAL_SERVER_ERROR,
         );
       }
-
+        //@ts-ignore
       existingUser.password = newPassword;
     } else {
       throw new CustomAPIErrorHandler(
@@ -278,8 +274,9 @@ export async function updateInfo(req: Request, res: Response): Promise<void> {
       httpOnly: true,
       expires: new Date(Date.now()),
     });
-
+        //@ts-ignore
     await existingUser.save();
+        //@ts-ignore
     await detailsUpdated(existingUser.email);
 
     res

@@ -1,11 +1,10 @@
 import * as jwt from "jsonwebtoken";
 import { Response } from "express";
-//@ts-ignore
-//help
+
 
 export function createJWT<Type>(payload: Type): string {
   const token = jwt.sign(payload as object, process.env.JWT_SECRET as string, {
-    expiresIn: "1h",
+    expiresIn:process.env.JWT_LIMIT,
   });
   return token;
 }
