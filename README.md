@@ -2,6 +2,11 @@
 # Urizen Password Manager
 
 
+
+
+# IMPORTANT INFORMATION
+## We have switched to RedisDB for securing passwords safely
+
 This the server for Urizen's Password Manager (UPW) and how its meant to be used
  Its uses and requests are as follows:
 
@@ -128,28 +133,12 @@ POST /api/v1/password
 **Login Required**
 | Parameter | Type     | Description                       |
 | :-------- | :------- | :-------------------------------- |
-| `email`      | `string` | **Required**.|
-| `name`|  `string` | **Required** Name of the site the password is belongin to.|
+| `name`|  `string` | **Required** Email of the site the password is belongin to.|
 | `password`      | `string` | **Required**. Password to the desired site|
 
 
 ### Create a password Entry
 Opens a password entry for the user for the first time. It only accepts one Name field for the first entry.
-
-
-# Add Password
-```http
-PATCH api/v1/password
-```
-**Login Required**
-| Parameter | Type     | Description                       |
-| :-------- | :------- | :-------------------------------- |
-| `email`      | `string` | **Required**.|
-| `name`|  `string` | **Required** Name of the site the password is belongin to.|
-| `password`      | `string` | **Required**. Password to the desried site|
-
-### Add Password
-Adds extra password entries and appends to the existing password entries. This can take as many fields as wanted.
 
 
 # Delete Password
@@ -159,9 +148,7 @@ DELETE api/v1/password
 **Login Required**
 | Parameter | Type     | Description                       |
 | :-------- | :------- | :-------------------------------- |
-| `email`      | `string` | **Required**.|
 | `name`|  `string` | **Required** Name of the site to the password user wants to Delete.|
-| `password`      | `string` | **Required**.To the User|
 
 ### Delete password
 Permanently Deletes the site from the database
