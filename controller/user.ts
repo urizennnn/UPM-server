@@ -21,11 +21,7 @@ import {
   createHash,
   createVerificationToken,
   generateRefreshToken,
-<<<<<<< HEAD
-  decodeToken
-=======
   decodeToken,
->>>>>>> 93b9987 (updated Readme)
 } from "./helper";
 const origin = process.env.ORIGIN as string;
 
@@ -215,11 +211,7 @@ export async function logout(req: Request, res: Response): Promise<void> {
       );
     }
     const existingUser = await User.findOne({ email });
-<<<<<<< HEAD
-    await decodeToken(req,res)
-=======
     await decodeToken(req, res);
->>>>>>> 93b9987 (updated Readme)
     const isPasswordCorrect: boolean = await bcryptjs.compare(
       password,
       //@ts-ignore
@@ -255,11 +247,7 @@ export async function updateInfo(req: Request, res: Response): Promise<void> {
   try {
     const { email, oldPassword, newPassword } = req.body;
     const existingUser = await User.findOne({ email });
-<<<<<<< HEAD
-    await decodeToken(req,res)
-=======
     await decodeToken(req, res);
->>>>>>> 93b9987 (updated Readme)
 
     if (oldPassword && newPassword) {
       const isOldPassValid = await bcryptjs.compare(
@@ -274,11 +262,7 @@ export async function updateInfo(req: Request, res: Response): Promise<void> {
           StatusCodes.INTERNAL_SERVER_ERROR,
         );
       }
-<<<<<<< HEAD
-        //@ts-ignore
-=======
       //@ts-ignore
->>>>>>> 93b9987 (updated Readme)
       existingUser.password = newPassword;
     } else {
       throw new CustomAPIErrorHandler(
@@ -290,15 +274,9 @@ export async function updateInfo(req: Request, res: Response): Promise<void> {
       httpOnly: true,
       expires: new Date(Date.now()),
     });
-<<<<<<< HEAD
-        //@ts-ignore
-    await existingUser.save();
-        //@ts-ignore
-=======
     //@ts-ignore
     await existingUser.save();
     //@ts-ignore
->>>>>>> 93b9987 (updated Readme)
     await detailsUpdated(existingUser.email);
 
     res
