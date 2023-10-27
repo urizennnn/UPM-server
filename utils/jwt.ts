@@ -3,7 +3,7 @@ import { Response } from "express";
 
 export function createJWT<Type>(payload: Type): string {
   const token = jwt.sign(payload as object, process.env.JWT_SECRET as string, {
-    expiresIn: process.env.JWT_LIMIT,
+    expiresIn: process.env.JWT_LIMIT as string,
   });
   return token;
 }
